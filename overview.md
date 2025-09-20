@@ -37,98 +37,111 @@ Note: user management endpoints (register, login, logout, get profile details, d
 Rate limits?
 
 ### 6.2. Request/response examples
+
 #### a. GET /v1/users/me/playtime  
-- **Request**  
+Request  
+```
 GET /v1/users/me/playtime  
-Authorization: Bearer <token>  
-- **Response (200 OK)**  
-    ```
-    [
-        {
-            "id": "b8f6e1a2-1234-4f8a-9c77-3b9a2f73a0cd",
-            "game_id": "elden-ring",
-            "title": "Elden Ring",
-            "completion_time": 120,
-        },
-        {
-            "id": "d3f2c4e9-5678-4ab9-81aa-9b24de55f0ab",
-            "game_id": "hollow-knight",
-            "title": "Hollow Knight",
-            "completion_time": 35,
-        }
-    ]
-    ```
-
-#### b. POST /v1/users/me/playtime
-- **Request**  
-    ```  
-    POST /v1/users/me/playtime  
-    Authorization: Bearer <token>  
-    Content-Type: application/json
+Authorization: Bearer <token>
+```
+Response (200 OK)  
+```
+[
     {
-        "game_id": "hollow-knight-silksong",
-        "completion_time": 42,
-    }
-    ```
-- **Response (201 Created)**
-    ```
-    {
-        "id": "e12ab345-6789-40de-98f3-b12345cd6789",
-        "game_id": "hollow-knight-silksong",
-        "title": "Hollow Knight: Silksong",
-        "completion_time": 42,
-    }
-    ```
-
-#### c. PUT /v1/users/me/playtime/{id}
-- **Request**  
-    ```
-    PUT /v1/users/me/playtime/d3f2c4e9-5678-4ab9-81aa-9b24de55f0ab
-    Authorization: Bearer <token>
-    Content-Type: application/json
-    {
-        "completion_time": 50,
-    }
-    ```
-- **Response (200 OK)**  
-    ```
+        "id": "b8f6e1a2-1234-4f8a-9c77-3b9a2f73a0cd",
+        "game_id": "elden-ring",
+        "title": "Elden Ring",
+        "completion_time": 120,
+    },
     {
         "id": "d3f2c4e9-5678-4ab9-81aa-9b24de55f0ab",
         "game_id": "hollow-knight",
         "title": "Hollow Knight",
-        "completion_time": 50,
+        "completion_time": 35,
     }
-    ```
+]
+```
+
+#### b. POST /v1/users/me/playtime
+Request  
+```  
+POST /v1/users/me/playtime  
+Authorization: Bearer <token>  
+Content-Type: application/json
+{
+    "game_id": "hollow-knight-silksong",
+    "completion_time": 42,
+}
+```
+Response (201 Created)  
+```
+{
+    "id": "e12ab345-6789-40de-98f3-b12345cd6789",
+    "game_id": "hollow-knight-silksong",
+    "title": "Hollow Knight: Silksong",
+    "completion_time": 42,
+}
+```
+
+#### c. PUT /v1/users/me/playtime/{id}
+Request  
+```
+PUT /v1/users/me/playtime/d3f2c4e9-5678-4ab9-81aa-9b24de55f0ab
+Authorization: Bearer <token>
+Content-Type: application/json
+{
+    "completion_time": 50,
+}
+```
+Response (200 OK)
+```
+{
+    "id": "d3f2c4e9-5678-4ab9-81aa-9b24de55f0ab",
+    "game_id": "hollow-knight",
+    "title": "Hollow Knight",
+    "completion_time": 50,
+}
+```
 
 #### d. DELETE /v1/users/me/playtime/{id}
-- **Request**  
-    ```
-    DELETE /v1/users/me/playtime/e12ab345-6789-40de-98f3-b12345cd6789
-    Authorization: Bearer <token>
-    ```
-- **Response (204 No Content)**  
-    ```
-    (no body)
-    ```
+Request  
+```
+DELETE /v1/users/me/playtime/e12ab345-6789-40de-98f3-b12345cd6789
+Authorization: Bearer <token>
+```
+Response (204 No Content)    
+```
+(no body)
+```
 
-#### 5. GET /v1/predictions/{id}
-- **Request**  
-    ```
-    GET /v1/predictions/silksong  
-    Authorization: Bearer <token>
-    ```
-- **Response (200 OK)**
-    ```
-    {
-    "game_id": "silksong",
-    "title": "Hollow Knight: Silksong",
-    "predicted_hours": 42,
-    "confidence": 0.87,
-    }
-    ```
+#### e. GET /v1/predictions/{id}
+Request  
+```
+GET /v1/predictions/silksong  
+Authorization: Bearer <token\
+```
+Response (200 OK)  
+```
+{
+"game_id": "silksong",
+"title": "Hollow Knight: Silksong",
+"predicted_hours": 42,
+"confidence": 0.87,
+}
+```
 
 ### 6.3. Auth scheme
+- Type: HTTP
+- Scheme: Bearer
+- Header: Authorization
+- Format: Authorization: Bearer \<token\>
+- Server returns token on login/ register. Client stores token and sends it for protected endpoints. Server validates the token on every such request, and either accepts or rejects with 401 Unauthorized.  
 
+Example:
+```
+GET /v1/users/me/playtime
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
 
 
 ## 7. Privacy, Ethics, Reciprocity (PIA excerpt)
