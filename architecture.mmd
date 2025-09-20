@@ -1,0 +1,22 @@
+flowchart TD
+    A["**Client** (Web/UI)"] 
+    B["**API Gateway** 
+    Rate limits, firewall"]
+    C["**OAuth/JWT**
+    Auth provider"]
+    D["**CloudWatch + CloudTrail**
+    Logs, metrics, alerts"]
+    E["**Lambda** 
+    - Modify user records
+    - Make predictions"]
+    F["**DynamoDB**
+    Data storage"]
+
+    A <--> B
+    B <--> C
+    C --> D
+    B <--> E
+    C --> E
+    E --> D
+    E <--> |TTL=30d raw, 180d agg,  
+k-anonymity, jitter on telemetry| F

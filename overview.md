@@ -135,7 +135,7 @@ Response (200 OK)
 - Scheme: Bearer
 - Header: Authorization
 - Format: Authorization: Bearer \<token\>
-- Server returns token on login/ register. Client stores token and sends it for protected endpoints. Server validates the token on every such request, and either accepts or rejects with 401 Unauthorized.  
+- Server returns token on login/register. Client stores token and sends it for protected endpoints. Server validates the token on every such request, and either accepts or rejects with 401 Unauthorized.  
 
 Example:
 ```
@@ -164,10 +164,8 @@ Full Privacy Impact Assessment (PIA) [here](/pia.md)
   - Engineers see aggregates
   - Individual records only accessible to the user
 
-## 8. Architecture Sketch (1 diagram)
-Show how the system works beyond the API surface. Include 6–8 boxes (Client, API Gateway/Ingress, Compute, Data Store, Auth provider, Observability), arrows for flow, and label guardrails (retention TTLs, k‑anonymity/jitter if applicable) and external dependencies (e.g., CDN, payments). Note 1–2 trade‑offs/alternatives.
-
-Optional: add a single happy‑path sequence diagram to make flow crystal clear:
+## 8. Architecture Sketch
+<img src="architecture.png" alt="architecture" width="300"/>
 
 ## 9. Risks & Mitigations
 
