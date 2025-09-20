@@ -170,9 +170,8 @@ Show how the system works beyond the API surface. Include 6–8 boxes (Client, A
 Optional: add a single happy‑path sequence diagram to make flow crystal clear:
 
 ## 9. Risks & Mitigations
-Top 3 risks (technical/ethical) and how you will test or reduce them.
 
-#### 1. Service scalability / downtime during spikes
+#### a. Service scalability / downtime during spikes
 Sudden spikes (e.g., popular game release, Steam Summer Sale) could overwhelm Lambda/API Gateway, causing errors or slow responses. Several mitigations:
 - Use serverless architecture (Lambda + API Gateway) with autoscaling.
 - Implement rate limiting and caching to smooth bursts.
@@ -182,7 +181,7 @@ Testing / Validation:
 - Conduct load tests simulating 10x normal traffic.
 - Measure p95 latency and error rates; tune concurrency limits, caching, and retry policies.
 
-#### 2. Model bias / inaccurate predictions
+#### b. Model bias / inaccurate predictions
 Collaborative filtering may over- or under-estimate completion times for users who play differently than the majority, e.g., very fast or casual players. Several mitigations:
 - Implement baseline model comparison: always check that collaborative filtering improves on global averages.
 - Flag predictions with low confidence (e.g., few similar games in user history).
@@ -191,7 +190,7 @@ Testing / Validation:
 - Use a test set with holdout users and compute RMSE/MAE to evaluate accuracy.
 - Simulate edge cases (fast/completionist vs casual players) and review model outputs.
 
-#### 3. Re-identification of users from playtime data
+#### c. Re-identification of users from playtime data
 No IP, UA, or location collected, but very unique combinations of completion_time across games could theoretically identify a user if leaked or joined with external data. Several mitigations:
 - Enforce k-anonymity for any public or aggregate stats (e.g., only publish averages if ≥10 users).
 - Truncate completion times to nearest hour.

@@ -131,18 +131,36 @@ AWS management
 - All privileged access requests logged through CloudTrail / IAM Access Analyzer
 
 ### Transparency & Choice
- “What we collect & why” communication plan.
- Opt-in/opt-out mechanisms where feasible.
+Privacy policy; on the website, let the user know that:
+- The service collects aggregated, anonymized telemetry to maintain service quality. 
+- Individual predictions are never linked publicly. 
+- Predictions are only visible to the user who submitted the data. - Option to delete or edit playtime data at any time.
+- Account deletion removes all personal playtime records.
 
 ### Security
- Threats (abuse, scraping, doxxing) and mitigations (WAF, rate limits, jitter).
- Secrets management and transport security.
+The API faces potential threats like abuse (excessive requests), scraping of predictions, and doxxing attempts. To mitigate these, we implement:
+- Rate limiting via API Gateway, request throttling, and per-user quotas to prevent overuse.
+- Web Application Firewall (WAF) filters suspicious traffic.
+- Telemetry timestamps or request identifiers are jittered to prevent correlation attacks. 
+- All user inputs are validated and sanitized to reduce injection or enumeration risks.
+- All sensitive credentials (API keys, database passwords) are stored securely in a managed secrets manager (e.g., AWS Secrets Manager) and rotated regularly. 
+- All API communications are enforced over HTTPS/TLS.
+- Bearer tokens are validated per request to ensure secure authentication. 
+- No sensitive data is transmitted in query parameters or logs.
 
 ### Compliance & Policy Alignment
- Policies (course policy, org policy, legal frameworks) and how you meet them.
- 1 / 2
+- Collect only necessary data, provide deletion rights, maintain transparency via privacy policy.
+- Maintain transparency about data usage, retention, and opt-in mechanisms.
+- Follow least-privilege access and internal change management processes.
+- Conduct regular internal audits of telemetry, access logs, and data retention.
 
 ### Residual Risks & Trade-offs
- Top residual risks, business/ethical rationale, and contingency measures.
+- Re-identification from rare playtime patterns
+  - Business/Ethical Rationale: Even with anonymization, extremely unique combinations of game completions could theoretically link back to a user. 
+  - Contingency Measures: Limit public data to aggregated stats (≥10 users), truncate completion times, audit datasets for uniqueness before release.
+  - Tradeoff: Needs a minimum number of recorded playtimes to be able to show 
+- Abuse or scraping of API
+  - Business/Ethical Rationale: Excessive or malicious requests could drive costs up and compromise system integrity.
+  - Contingency Measures: API rate limits, WAF, anomaly detection, token validation, and throttling policies.
 
  > Attach telemetry decision matrix and any diagrams that clarify data flows.
