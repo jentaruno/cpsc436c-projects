@@ -123,10 +123,10 @@ Authorization: Bearer <token\
 Response (200 OK)  
 ```
 {
-"game_id": "silksong",
-"title": "Hollow Knight: Silksong",
-"predicted_hours": 42,
-"confidence": 0.87,
+    "game_id": "silksong",
+    "title": "Hollow Knight: Silksong",
+    "predicted_hours": 42,
+    "confidence": 0.87,
 }
 ```
 
@@ -144,13 +144,25 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 
-## 7. Privacy, Ethics, Reciprocity (PIA excerpt)
-Data inventory, purpose limitation, retention, access (link your PIA).
-Telemetry decision matrix (value vs invasiveness vs effort).
-Guardrails: k-anonymity, jitter/aggregation, opt-ins, disclosure.
-Reciprocity: value returned and to whom.
-- Users can add, edit, or remove any game completion time entries on their own will anytime
-- No hidden monitoring
+## 7. Privacy, Ethics, Reciprocity
+Full Privacy Impact Assessment (PIA) [here](/pia.md)
+- Data inventory:
+  - User playtime records (ID, game ID, completion time)
+  - Prediction requests (game ID, timestamp, model version)
+  - Auth tokens (ephemeral JWTs only, no passwords)
+  - Minimal telemetry: request counts, latency, error codes (no IPs/UA stored)
+- Purpose limitation:
+  - Playtime → personalized predictions
+  - Telemetry → reliability (debugging, capacity planning, SLA validation)
+  - No secondary use (e.g., advertising/profiling)
+- Retention:
+  - Playtime records: until user deletes account/data
+  - Predictions: ephemeral (≤ 7 days for debugging, then dropped)
+  - Telemetry raw logs: TTL ≤ 14 days; aggregates 90–180 days
+- Access:
+  - Role-based, least-privilege
+  - Engineers see aggregates
+  - Individual records only accessible to the user
 
 ## 8. Architecture Sketch (1 diagram)
 Show how the system works beyond the API surface. Include 6–8 boxes (Client, API Gateway/Ingress, Compute, Data Store, Auth provider, Observability), arrows for flow, and label guardrails (retention TTLs, k‑anonymity/jitter if applicable) and external dependencies (e.g., CDN, payments). Note 1–2 trade‑offs/alternatives.
@@ -159,6 +171,35 @@ Optional: add a single happy‑path sequence diagram to make flow crystal clear:
 
 ## 9. Risks & Mitigations
 Top 3 risks (technical/ethical) and how you will test or reduce them.
+
+#### 1. Service scalability / downtime during spikes
+Sudden spikes (e.g., popular game release, Steam Summer Sale) could overwhelm Lambda/API Gateway, causing errors or slow responses. Several mitigations:
+- Use serverless architecture (Lambda + API Gateway) with autoscaling.
+- Implement rate limiting and caching to smooth bursts.
+- Monitor SLA metrics (p95 latency, error rates) and pre-warm Lambda functions if needed.
+
+Testing / Validation:
+- Conduct load tests simulating 10x normal traffic.
+- Measure p95 latency and error rates; tune concurrency limits, caching, and retry policies.
+
+#### 2. Model bias / inaccurate predictions
+Collaborative filtering may over- or under-estimate completion times for users who play differently than the majority, e.g., very fast or casual players. Several mitigations:
+- Implement baseline model comparison: always check that collaborative filtering improves on global averages.
+- Flag predictions with low confidence (e.g., few similar games in user history).
+
+Testing / Validation:
+- Use a test set with holdout users and compute RMSE/MAE to evaluate accuracy.
+- Simulate edge cases (fast/completionist vs casual players) and review model outputs.
+
+#### 3. Re-identification of users from playtime data
+No IP, UA, or location collected, but very unique combinations of completion_time across games could theoretically identify a user if leaked or joined with external data. Several mitigations:
+- Enforce k-anonymity for any public or aggregate stats (e.g., only publish averages if ≥10 users).
+- Truncate completion times to nearest hour.
+- Keep telemetry fully aggregated, avoid storing identifiers.
+
+Testing / Validation:
+- Perform synthetic re-identification tests: attempt to link a “fake user” record to real records in your dataset.
+- Periodically audit published aggregates to ensure no small groups (<10 users) are exposed.
 
 ## 10. Measurement Plan
 - MAE  
