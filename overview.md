@@ -14,7 +14,11 @@ Hours to complete a video game
 
 ## 4. Baseline → Model Plan 
 - Baseline model: Always predict the global average from HowLongToBeat.com. If the model doesn’t predict it better than the global averages, then it’s not good enough.
-- Collaborative filtering; good to use this model because gameplay data is usually sparse, and games are very unique. They’re difficult to categorise into classes or parameters that predict completion time. Collaborative filtering allows us to look at players who played the same games and make a prediction by comparing their play time data to our player’s data, and filling in the blanks.
+- Collaborative filtering with matrix factorization; good to use this model because  
+  - Gameplay data is usually sparse
+  - Games are very unique. They’re difficult to categorise into classes or parameters that predict completion time.
+  - Collaborative filtering allows us to look at players who played the same games and make a prediction by comparing their play time data to our player’s data, and filling in the blanks.
+  - Scales well to large datasets.
 
 ## 5. Metrics, SLA, and Cost 
 **Metrics: MAE (Mean Absolute Error)**  
@@ -32,12 +36,12 @@ Absolute errors between predicted vs actual hours to beat a game. Chosen because
 <summary>
 <strong>Revenue model: Contextual ads</strong>
 </summary>
-<ul>
-<li>Ads served on the web UI, not the API.</li>
-<li>Ads are non-personalized, contextual only (e.g., “Get 20% off on Steam RPGs” related to the game where a prediction request was made).</li>
-<li>Typical CPM (cost per 1,000 impressions) for gaming display ads: $1–$3 CPM.</li>
-<li>Profit = Revenue - Cost = $9.5 to $29.5 per 10K predictions</li>
-</ul>
+
+- Ads served on the web UI, not the API.
+- Ads are non-personalized, contextual only (e.g., “Get 20% off on Steam RPGs” related to the game where a prediction request was made).
+- Typical CPM (cost per 1,000 impressions) for gaming display ads: $1–$3 CPM.
+- Profit = Revenue - Cost = $9.5 to $29.5 per 10K predictions
+
 </details>
 
 ## 6. API Sketch
@@ -51,8 +55,6 @@ Note: user management endpoints (register, login, logout, get profile details, d
 | PUT    | /v1/users/me/playtime/{id}    | Update an existing playtime record (e.g., hours, completion status)     | Bearer      |
 | DELETE | /v1/users/me/playtime/{id}    | Remove a playtime record                                                | Bearer      |
 | GET    | /v1/predictions/{gameId}      | Predict completion time for the given game based on user’s play history | Bearer      |
-
-Rate limits?
 
 ### 6.2. Request/response examples
 
@@ -74,7 +76,7 @@ Response (200 OK)
 
 <details>
 <summary>
-User modifying their playtime entries
+Other endpoints related to modifying playtime entries
 </summary>
 
 #### GET /v1/users/me/playtime  
@@ -243,10 +245,32 @@ Testing / Validation:
 - Periodically audit published aggregates to ensure no small groups (<10 users) are exposed.
 
 ## 10. Measurement Plan
-- MAE  
-  Run the baseline model vs the collaborative filtering model on a test set. Compute improvements in percentages of MAE
+- Mean Absolute Error (MAE)  
+  - Run the baseline model (HowLongToBeat averages) vs the collaborative filtering model on a test set. 
+  - Compute improvements in percentages of MAE
+  - Offline test: Use 1k-row (or synthetic) user dataset. Simulate new predictions by hiding target game completion times. Compute MAE/RMSE for baseline vs model. Accept model if MAE improves ≥ 15% over baseline.
 - SLA  
-  Measure API response times under realistic load; p50, p95, and max latency
+  - Target: < 500 ms for /v1/predictions/{gameId} at normal load.
+  - Target under spikes (10× load): < 1s.
+  - Deploy staging Lambda + API Gateway, use synthetic probes (e.g., k6/Artillery) + CloudWatch p95 latency metric, validate.
+- Cost:  
+  Free (normal load, 100 reqs/day)  
+  $74.95/mo → $1.46/d → $0.1/h (viral spike, 50,000 reqs/hour)
+  <details>
+    <summary>Lambda cost</summary>
+    AWS pricing calculator, normal load stays in free tier
+    <img src="lambda-cost.png" alt="lambda-cost" width="300"/>
+    AWS pricing calculator, viral spike costs $38.45/mo → $1.26/d → $0.05/h 
+    <img src="lambda-cost-viral.png" alt="lambda-cost-viral" width="300"/>
+  </details>
+  <details>
+    <summary>API Gateway cost</summary>
+    AWS pricing calculator, normal load stays in free tier
+    <img src="api-gateway-cost.png" alt="api-gateway-cost" width="300"/>
+    AWS pricing calculator, viral spike costs $36.5/mo → $1.2/d → $0.05/h
+    <img src="api-gateway-cost.png" alt="api-gateway-cost-viral" width="300"/>
+  </details>
+
 
 ##  11. Evolution & Evidence
 - [Git commits](https://github.com/jentaruno/cpsc436c-projects/commits/main/)
@@ -256,4 +280,4 @@ Testing / Validation:
 
 ---
 
-*For further information on the metrics used, see [Glossary](https://canvas.ubc.ca/courses/168892/pages/glossary-and-acronyms-course)*
+*For further information on acronyms used, see [Glossary](https://canvas.ubc.ca/courses/168892/pages/glossary-and-acronyms-course)*
