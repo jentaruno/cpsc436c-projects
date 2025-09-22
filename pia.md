@@ -79,11 +79,23 @@ Sharing
   - Retention: Raw ≤ 14 days; aggregates 90–180 days  
   - Access roles: Engineers (aggregates only)  
 
+
+#### Telemetry decision matrix
+| Metric / Log                  | Value (H/M/L) | Invasiveness (H/M/L) | Effort (H/M/L) | Decision         |
+| ----------------------------- | ------------- | -------------------- | -------------- | ---------------- |
+| Request latency (p95/p99)     | H             | L                    | L              | Keep             |
+| Error codes (4xx/5xx counts)  | H             | L                    | L              | Keep             |
+| Prediction result stats (avg) | M             | M (game behavior)    | M              | Aggregate only   |
+| User identifiers in logs      | L             | H                    | L              | Drop             |
+| Raw request/response bodies   | M             | H                    | M              | Drop after debug |
+
+
 ### Linkability & Identifiability
 - Events can be linked across sessions for the same user, they can make an account. Their playtime records and predictions are linked to their account ID.
 - Events can't be linked across users.
 - Session tokens resolve to account ID. All records are keyed on that ID
 - None of the fields collected are quasi-identifiers (no IP/location/device leak).
+- k-anonymity with k≥10 when displaying game completion time averages, to prevent re-identification
 
 ### Purpose Limitation & Secondary Use
 Purposes
@@ -121,9 +133,7 @@ Engineering / Operations staff
 - Read/write access limited by role:
 - Developers → access to staging/test data only (no prod).
 - Ops/SRE → read-only production metrics/telemetry; no direct user data access.
-
-Admin (break-glass only)
-- Time-limited elevated rights, logged and reviewed.
+- Admin (break-glass only) → time-limited elevated rights, logged and reviewed.
 
 AWS management
 - Lambda, API Gateway, DynamoDB, S3, CloudWatch. No other third parties (ad networks/analytics SDKs)
@@ -162,5 +172,3 @@ The API faces potential threats like abuse (excessive requests), scraping of pre
 - Abuse or scraping of API
   - Business/Ethical Rationale: Excessive or malicious requests could drive costs up and compromise system integrity.
   - Contingency Measures: API rate limits, WAF, anomaly detection, token validation, and throttling policies.
-
- > Attach telemetry decision matrix and any diagrams that clarify data flows.
