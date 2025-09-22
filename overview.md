@@ -17,10 +17,22 @@ Hours to complete a video game
 - Collaborative filtering; good to use this model because gameplay data is usually sparse, and games are very unique. They’re difficult to categorise into classes or parameters that predict completion time. Collaborative filtering allows us to look at players who played the same games and make a prediction by comparing their play time data to our player’s data, and filling in the blanks.
 
 ## 5. Metrics, SLA, and Cost 
-- Metrics: MAE (Mean Absolute Error)
+**Metrics: MAE (Mean Absolute Error)**  
 Absolute errors between predicted vs actual hours to beat a game. Chosen because this is less sensitive to outlier data (speedrunners and idlers). It’s also very interpretable as an error to evaluate.
-- SLA (Service-Level Agreement): p95 < 200ms per prediction
-Cost: < $0-0.1 per 10K predictions, remaining on the free tier for normal load and paying when there are surges
+
+**SLA (Service-Level Agreement)**: p95 < 200ms per prediction
+
+**Cost:**  
+- Infra: Lambda + API Gateway (serverless, free tier covers normal load).
+- Baseline cost: ≈ $0.30–$0.50 per 10K predictions when scaling beyond free tier.
+- Telemetry/logs: negligible (<$0.05 per 10K predictions).
+- Total cost: ≤$0.50 per 10K predictions.
+
+**Revenue model: Contextual ads**
+- Ads served on the web UI, not the API.
+- Ads are non-personalized, contextual only (e.g., “Get 20% off on Steam RPGs” related to the game where a prediction request was made).
+- Typical CPM (cost per 1,000 impressions) for gaming display ads: $1–$3 CPM.
+- Profit = Revenue - Cost = $9.5 to $29.5 per 10K predictions
 
 ## 6. API Sketch
 
@@ -205,8 +217,10 @@ Testing / Validation:
   Measure API response times under realistic load; p50, p95, and max latency
 
 ##  11. Evolution & Evidence
-- Link a git hash (or range/tag) that shows the design’s evolution (commits, README updates, diagrams).
-- Insight memo link (3 insights), assumption audit, and Socratic log references.
+- [Git commits](https://github.com/jentaruno/cpsc436c-projects/commits/main/)
+- [Insight memo](insight_memo.md)
+- [Assumption audit](assumption_audit.md)
+- [Socratic log](socratic_log.md)
 
 ---
 
