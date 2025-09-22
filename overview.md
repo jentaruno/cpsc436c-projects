@@ -1,5 +1,5 @@
 # How Fast You’ll Beat
-HowLongToBeat.com has global averages of a game’s completion time, but they’re often a little off when you actually play it yourself. This API predicts a user’s completion time for a video game based on their past completion data.
+[HowLongToBeat.com](https://howlongtobeat.com/) has global averages of a game’s completion time, but they’re often a little off when you actually play it yourself. This API predicts a user’s completion time for a video game based on their past completion data.
 
 ## 1. User & Decision: 
 Video game players can predict how much time they’ll need to complete a video game, or how long their friends will need if they’re gifting a game. From that data, they can decide if and when it’s worth it to buy/start playing.
@@ -28,11 +28,17 @@ Absolute errors between predicted vs actual hours to beat a game. Chosen because
 - Telemetry/logs: negligible (<$0.05 per 10K predictions).
 - Total cost: ≤$0.50 per 10K predictions.
 
-**Revenue model: Contextual ads**
-- Ads served on the web UI, not the API.
-- Ads are non-personalized, contextual only (e.g., “Get 20% off on Steam RPGs” related to the game where a prediction request was made).
-- Typical CPM (cost per 1,000 impressions) for gaming display ads: $1–$3 CPM.
-- Profit = Revenue - Cost = $9.5 to $29.5 per 10K predictions
+<details>
+<summary>
+<strong>Revenue model: Contextual ads</strong>
+</summary>
+<ul>
+<li>Ads served on the web UI, not the API.</li>
+<li>Ads are non-personalized, contextual only (e.g., “Get 20% off on Steam RPGs” related to the game where a prediction request was made).</li>
+<li>Typical CPM (cost per 1,000 impressions) for gaming display ads: $1–$3 CPM.</li>
+<li>Profit = Revenue - Cost = $9.5 to $29.5 per 10K predictions</li>
+</ul>
+</details>
 
 ## 6. API Sketch
 
@@ -50,7 +56,28 @@ Rate limits?
 
 ### 6.2. Request/response examples
 
-#### a. GET /v1/users/me/playtime  
+#### GET /v1/predictions/{id}
+Request  
+```
+GET /v1/predictions/silksong  
+Authorization: Bearer <token>
+```
+Response (200 OK)  
+```
+{
+    "game_id": "silksong",
+    "title": "Hollow Knight: Silksong",
+    "predicted_hours": 42,
+    "confidence": 0.87,
+}
+```
+
+<details>
+<summary>
+User modifying their playtime entries
+</summary>
+
+#### GET /v1/users/me/playtime  
 Request  
 ```
 GET /v1/users/me/playtime  
@@ -74,7 +101,7 @@ Response (200 OK)
 ]
 ```
 
-#### b. POST /v1/users/me/playtime
+#### POST /v1/users/me/playtime
 Request  
 ```  
 POST /v1/users/me/playtime  
@@ -95,7 +122,7 @@ Response (201 Created)
 }
 ```
 
-#### c. PUT /v1/users/me/playtime/{id}
+#### PUT /v1/users/me/playtime/{id}
 Request  
 ```
 PUT /v1/users/me/playtime/d3f2c4e9-5678-4ab9-81aa-9b24de55f0ab
@@ -115,7 +142,7 @@ Response (200 OK)
 }
 ```
 
-#### d. DELETE /v1/users/me/playtime/{id}
+#### DELETE /v1/users/me/playtime/{id}
 Request  
 ```
 DELETE /v1/users/me/playtime/e12ab345-6789-40de-98f3-b12345cd6789
@@ -126,21 +153,7 @@ Response (204 No Content)
 (no body)
 ```
 
-#### e. GET /v1/predictions/{id}
-Request  
-```
-GET /v1/predictions/silksong  
-Authorization: Bearer <token\
-```
-Response (200 OK)  
-```
-{
-    "game_id": "silksong",
-    "title": "Hollow Knight: Silksong",
-    "predicted_hours": 42,
-    "confidence": 0.87,
-}
-```
+</details>
 
 ### 6.3. Auth scheme
 - Type: HTTP
@@ -178,6 +191,25 @@ Full Privacy Impact Assessment (PIA) [here](/pia.md)
 
 ## 8. Architecture Sketch
 <img src="architecture.png" alt="architecture" width="300"/>
+
+- API Gateway  
+  - Managed entry point for all requests, with rate limiting, firewall, request validation, and authentication integration with minimal effort. 
+  - Scales automatically with traffic spikes (new game releases or Steam sales).
+- OAuth/JWT:
+  - Secure user authentication without storing passwords.
+  - Stateless carryover of user ID; avoid hitting a database each time it's needed.
+- AWS Lambda: 
+  - Serverless compute; no need to provision or manage EC2 instances.
+  - Auto-scaling to handle normal and peak traffic.
+  - Fits well with a small-to-medium ML model that can load in-memory per invocation.
+- CloudWatch + CloudTrail
+  - CloudWatch computes p95 SLA and triggers alerts.
+  - CloudTrail records all privileged operations for compliance and auditability.
+- DynamoDB:
+  - Fully managed NoSQL; ideal for user-based playtime records keyed by UUID.
+  - Low-latency read/write for single-user operations and prediction lookups.
+  - Scales automatically to handle spikes in traffic.
+  - Supports TTL for ephemeral logs, simplifying data retention and minimization policies. 
 
 ## 9. Risks & Mitigations
 
