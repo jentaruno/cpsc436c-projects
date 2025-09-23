@@ -13,24 +13,26 @@ Hours to complete a video game
 - Avoid leakage: Ensure golden rule (test data doesn’t influence training data). Ensure stats that are eventually logged in the future, in the database deployed to production, doesn’t influence the predictions.
 
 ## 4. Baseline → Model Plan 
-- Baseline model: Always predict the global average from HowLongToBeat.com. If the model doesn’t predict it better than the global averages, then it’s not good enough.
-- Collaborative filtering with matrix factorization; good to use this model because  
-  - Gameplay data is usually sparse
-  - Games are very unique. They’re difficult to categorise into classes or parameters that predict completion time.
-  - Collaborative filtering allows us to look at players who played the same games and make a prediction by comparing their play time data to our player’s data, and filling in the blanks.
-  - Scales well to large datasets.
+- **Baseline model: Always predict the global average from HowLongToBeat.com**.  
+  If the model doesn’t predict it better than the global averages, then it’s not good enough.
+- **Collaborative filtering with matrix factorization**.  
+  Collaborative filtering allows us to look at players who played the same games and make a prediction by comparing their play time data to our player’s data, and filling in the blanks. Good to use this model because   
+  - Gameplay data is usually sparse - this works well to take data from other players and combining the limited information we have.
+  - Games are very unique. They’re difficult to categorise into classes or parameters that predict completion time - this is an unsupervised learning solution.
+  - Scales well to large datasets - matrix factorization more reliable than KNN.
 
 ## 5. Metrics, SLA, and Cost 
 **Metrics: MAE (Mean Absolute Error)**  
 Absolute errors between predicted vs actual hours to beat a game. Chosen because this is less sensitive to outlier data (speedrunners and idlers). It’s also very interpretable as an error to evaluate.
 
-**SLA (Service-Level Agreement)**: p95 < 200ms per prediction
+**SLA (Service-Level Agreement)**: p95 < 100ms per prediction
 
 **Cost:**  
 - Infra: Lambda + API Gateway (serverless, free tier covers normal load).
-- Baseline cost: ≈ $0.30–$0.50 per 10K predictions when scaling beyond free tier.
-- Telemetry/logs: negligible (<$0.05 per 10K predictions).
-- Total cost: ≤$0.50 per 10K predictions.
+- Baseline cost: ≈ $0.012 per 10K predictions when scaling beyond free tier.
+- Telemetry/logs: negligible, free tier provides 5GB data and our logs are ephemeral. Likely to stay free.
+- Total cost: $0-0.012 per 10K predictions.
+- See details and alternatives [here](assumption_audit.md)
 
 <details>
 <summary>
@@ -40,7 +42,7 @@ Absolute errors between predicted vs actual hours to beat a game. Chosen because
 - Ads served on the web UI, not the API.
 - Ads are non-personalized, contextual only (e.g., “Get 20% off on Steam RPGs” related to the game where a prediction request was made).
 - Typical CPM (cost per 1,000 impressions) for gaming display ads: $1–$3 CPM.
-- Profit = Revenue - Cost = $9.5 to $29.5 per 10K predictions
+- Profit = $9.5-$29.5 per 10K predictions, far beyond the costs.
 
 </details>
 
@@ -250,26 +252,14 @@ Testing / Validation:
   - Compute improvements in percentages of MAE
   - Offline test: Use 1k-row (or synthetic) user dataset. Simulate new predictions by hiding target game completion times. Compute MAE/RMSE for baseline vs model. Accept model if MAE improves ≥ 15% over baseline.
 - SLA  
-  - Target: < 500 ms for /v1/predictions/{gameId} at normal load.
+  - Target: < 100 ms for /v1/predictions/{gameId} at normal load.
   - Target under spikes (10× load): < 1s.
   - Deploy staging Lambda + API Gateway, use synthetic probes (e.g., k6/Artillery) + CloudWatch p95 latency metric, validate.
-- Cost:  
-  Free (normal load, 100 reqs/day)  
-  $74.95/mo → $1.46/d → $0.1/h (viral spike, 50,000 reqs/hour)
-  <details>
-    <summary>Lambda cost</summary>
-    AWS pricing calculator, normal load stays in free tier
-    <img src="lambda-cost.png" alt="lambda-cost" width="300"/>
-    AWS pricing calculator, viral spike costs $38.45/mo → $1.26/d → $0.05/h 
-    <img src="lambda-cost-viral.png" alt="lambda-cost-viral" width="300"/>
-  </details>
-  <details>
-    <summary>API Gateway cost</summary>
-    AWS pricing calculator, normal load stays in free tier
-    <img src="api-gateway-cost.png" alt="api-gateway-cost" width="300"/>
-    AWS pricing calculator, viral spike costs $36.5/mo → $1.2/d → $0.05/h
-    <img src="api-gateway-cost.png" alt="api-gateway-cost-viral" width="300"/>
-  </details>
+- Cost: 
+  - Free for up to 1 million requests per month
+  - $0.012/h per 10K requests going beyond free tier
+  - See details and alternatives [here](assumption_audit.md)
+
 
 
 ##  11. Evolution & Evidence
