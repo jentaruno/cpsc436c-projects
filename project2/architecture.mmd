@@ -1,0 +1,47 @@
+---
+config:
+  layout: dagre
+---
+flowchart TD
+ subgraph subGraph0["Governance and Monitoring"]
+        M["CloudWatch + CloudTrail
+        Monitoring"]
+        L["AWS Lake Formation
+        Governance and access control"]
+  end
+ subgraph Publish["Publish"]
+        P_rep["Redshift
+        AML queries"]
+        P_sql["Athena
+        Ad-hoc SQL queries"]
+  end
+ subgraph Transform["Transform"]
+        T_orch["Airflow
+        Job orchestration"]
+        T_proc["AWS Glue
+        ETL, data catalog"]
+        T_model["AWS EMR
+        AML models, joins"]
+  end
+ subgraph Storage["Storage"]
+        S_storage["S3 (curated bucket)
+        Store raw & processed payment logs"]
+        S_kms["AWS KMS
+        Encryption at rest (per-region keys)"]
+  end
+ subgraph Ingest["Ingest"]
+        I_gate["API Gateway
+        Auth, rate limiting, firewall"]
+        I_api["gRPC + Protobuf
+        API endpoints, schema enforcement"]
+        I_ingest["S3 (raw bucket)
+        Batch ingestion"]
+  end
+    A["Payment Sources"] --> Ingest
+    Ingest --> Storage
+    Storage --> Transform
+    Transform --> Publish
+    Ingest -- API call logs, ingest metrics, alerts --> M
+    Storage -- S3 access logs --> M
+    Transform -- job monitoring, API usage --> M
+    L <--> Storage & Transform
