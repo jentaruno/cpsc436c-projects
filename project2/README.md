@@ -4,6 +4,11 @@ Batch pipeline, daily 2 TB of payment logs from banks and fintech companies ac
 ## Architecture Diagram
 <img src="architecture.png">
 
+<details>
+<summary>
+<strong>Per-layer details</strong>
+</summary>
+
 ### Ingest Layer
 
 Goal: Securely collect 2 TB/day of payment logs from Canada, India, UK.  
@@ -40,6 +45,8 @@ Goal: Deliver processed data to regulators, AML teams, and dashboards.
 - Anonymized/aggregated data if global reporting needed
 - Federated analytics to avoid raw data movement
 
+</details>
+
 ### Observability / Monitoring & Guardrails (Cross-cutting)
 
 Goal: Ensure reliability, compliance, and privacy. Raw data never leaves its country; only aggregated/anonymized insights can cross borders if global reporting is needed. 
@@ -50,18 +57,23 @@ Goal: Ensure reliability, compliance, and privacy. Raw data never leaves its cou
 - Security / Privacy: KMS key rotation, IAM monitoring, differential privacy checks
 
 ## Clause -> Control -> Test
-Ensures compliance with regulations from the countries involved.  
-- Canada: Personal Information Protection and Electronic Documents Act (PIPEDA).  
-- India: Digital Personal Data Protection (DPDP).  
-- Global: Anti-Money Laundering (AML) regulations.
 
-| Guardrail / Clause (Source)                                                                                                                      | AWS Service / Tool                                                   | Plan to Test                                                                                                                        |
-| ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| **Data residency / localization** (Canada PIPEDA, India DPDP) – Personal and financial data must remain within jurisdiction.                     | S3 buckets in specific regions, Lake Formation row-level permissions | Attempt cross-region read/write; verify access denied. Audit CloudTrail logs.                                                       |
-| **Encryption at rest & in transit** (PIPEDA Sec 4.7, DPDP Sec 11) – All data must be encrypted.                                                  | KMS CMKs, SSE-KMS on S3, gRPC + mTLS                                 | Upload test data, verify encryption keys; attempt access without key/role and confirm denial.                                       |
-| **Access control / least privilege** (PIPEDA, DPDP) – Only authorized users/jobs can read/write data.                                            | Lake Formation, IAM policies                                         | Test with unauthorized user/job trying to read/write; ensure access denied.                                                         |
-| **Consent enforcement** (DPDP Sec 8) – Process personal data only if consent exists.                                                             | ETL jobs, Glue catalog metadata                      | Load dataset with missing consent; ETL job should skip processing; audit logs show skipped rows.                                    |
-| **Data minimization & masking** (PIPEDA, DPDP) – Sensitive fields must be masked or tokenized for dashboards and analytics.                      | Glue/EMR/Databricks ETL + Lake Formation column-level permissions    | Run ETL on test dataset; confirm sensitive columns masked; attempt unauthorized read.                                               |
-| **Auditability & retention** (PIPEDA, DPDP, AML regulations) – Maintain logs of all processing and AML reporting for required retention periods. | CloudTrail + S3 lifecycle + Lake Formation lineage                   | Simulate retention lifecycle; verify logs accessible and cannot be deleted prematurely; check lineage metadata for transformations. |
-| **Data lineage & transformation traceability** (AML reporting guidelines, DPDP Sec 9) – Track how raw data flows to curated outputs.             | Lake Formation lineage + Glue Data Catalog                           | Run test ETL; verify output columns have lineage metadata showing source columns/tables.                                            |
-| **Monitoring & alerting** (PIPEDA Sec 4.7, DPDP Sec 11) – Detect anomalous access or processing errors.                                          | CloudWatch metrics, alarms, Macie for PII scanning                   | Inject simulated anomalies (e.g., large unauthorized read); verify alerts trigger and logs recorded.                                |
+### Canada: Personal Information Protection and Electronic Documents Act (PIPEDA)
+
+| **Clause**                                                                                | **AWS Service/Tool**                                                 | **Plan to Test**                                                                                                                   |
+| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Data Residency**: Personal data must be stored within Canada. *(Sec. 4.7)*       | S3 buckets in **ca-central-1**, Lake Formation row-level permissions | Attempt to access data from outside Canada (e.g., from the US); access should be denied. Verify via CloudTrail logs.               |
+| **Encryption at Rest**: Personal data must be encrypted. *(Sec. 4.7.3)*            | **KMS CMKs**, SSE-KMS on S3                                          | Upload test data to S3; verify encryption using the correct CMK. Attempt access without the proper key; access should be denied.   |
+| **Access Control**: Only authorized users can access personal data. *(Sec. 4.7.1)* | **Lake Formation**, IAM policies                                     | Create test users with varying permissions; attempt to access data they shouldn't have access to; access should be denied.         |
+| **Auditability**: Maintain logs of data access and modifications. *(Sec. 4.7.5)*   | **CloudTrail**, S3 Lifecycle policies                                | Review CloudTrail logs for unauthorized access attempts; verify that logs are retained according to the organization's policy.     |
+| **Data Minimization**: Collect only necessary personal data. *(Sec. 4.4)*          | Glue/EMR/Databricks ETL jobs                                         | Review ETL scripts to ensure only necessary data is being processed; attempt to process unnecessary data and verify it's excluded. |
+
+### India: Digital Personal Data Protection (DPDP)
+
+| **Clause**                                                                          | **AWS Service/Tool**                                               | **Plan to Test**                                                                                                                   |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Data Residency**: Personal data must be stored within India. *(Sec. 4)*      | S3 buckets in **ap-south-1**, Lake Formation row-level permissions | Attempt to access data from outside India (e.g., from Canada); access should be denied. Verify via CloudTrail logs.                |
+| **Encryption at Rest**: Personal data must be encrypted. *(Sec. 4)*            | **KMS CMKs**, SSE-KMS on S3                                        | Upload test data to S3; verify encryption using the correct CMK. Attempt access without the proper key; access should be denied.   |
+| **Access Control**: Only authorized users can access personal data. *(Sec. 4)* | **Lake Formation**, IAM policies                                   | Create test users with varying permissions; attempt to access data they shouldn't have access to; access should be denied.         |
+| **Auditability**: Maintain logs of data access and modifications. *(Sec. 4)*   | **CloudTrail**, S3 Lifecycle policies                              | Review CloudTrail logs for unauthorized access attempts; verify that logs are retained according to the organization's policy.     |
+| **Data Minimization**: Collect only necessary personal data. *(Sec. 4)*        | Glue/EMR/Databricks ETL jobs                                       | Review ETL scripts to ensure only necessary data is being processed; attempt to process unnecessary data and verify it's excluded. |
